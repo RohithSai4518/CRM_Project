@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniFlow CRM | Enterprise Relationship Management</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Login Modal / Screen -->
+  <div id="login-container" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 36px; margin-bottom: 8px;">⚡</div>
+      <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 6px;">OmniFlow CRM</h2>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px;">Sign in to access your enterprise workspace</p>
+      
+      <form id="form-login" style="text-align: left;">
+        <div class="form-group">
+          <label class="form-label">Work Email</label>
+          <input type="email" id="login-email" class="form-control" value="admin@omnicrm.com" required>
+        </div>
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin-bottom: 0;">Password</label>
+            <a href="#" style="font-size: 0.75rem; color: #60a5fa; text-decoration: none;" onclick="App.openForgotPasswordModal(); return false;">Forgot password?</a>
+          </div>
+          <input type="password" id="login-password" class="form-control" value="Password123!" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 12px; padding: 10px;">
+          Authenticate Securely →
+        </button>
+      </form>
+      
+      <div style="margin-top: 16px; font-size: 0.78rem; color: #94a3b8; border-top: 1px solid #334155; padding-top: 14px;">
+        Demo Logins: <code>admin@omnicrm.com</code>, <code>manager@omnicrm.com</code>, <code>rep@omnicrm.com</code>, <code>support@omnicrm.com</code>, <code>marketing@omnicrm.com</code> (PW: <code>Password123!</code>)
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Authenticated Layout -->
+  <div id="app-layout" style="display: flex; width: 100vw; min-height: 100vh;">
+    
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar">
+      <div class="brand-header">
+        <div class="brand-logo">⚡</div>
+        <div>
+          <div class="brand-title">OmniFlow CRM</div>
+          <div style="font-size: 0.7rem; color: #94a3b8;">ENTERPRISE EDITION</div>
+        </div>
+      </div>
+
+      <ul class="nav-links">
+        <li class="nav-item">
+          <a class="nav-link active" data-tab="dashboard">
+            <span class="nav-icon">📊</span> Executive Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="accounts">
+            <span class="nav-icon">🏢</span> Customer 360° Profiles
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="contacts">
+            <span class="nav-icon">👥</span> Contact Directory
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="leads">
+            <span class="nav-icon">⚡</span> Inbound Leads
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="pipeline">
+            <span class="nav-icon">🎯</span> Sales Pipeline & Kanban
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="tickets">
+            <span class="nav-icon">🎫</span> Helpdesk & Support
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="marketing">
+            <span class="nav-icon">📢</span> Marketing Campaigns
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="activities">
+            <span class="nav-icon">📅</span> Tasks & Calendar
+          </a>
+        </li>
+        <li class="nav-item" id="nav-admin-console">
+          <a class="nav-link" data-tab="admin_console">
+            <span class="nav-icon">🛡️</span> Admin Console & Roles
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="audit">
+            <span class="nav-icon">📜</span> Audit & Compliance
+          </a>
+        </li>
+      </ul>
+
+      <div class="user-profile-bar">
+        <div class="user-info">
+          <img id="user-avatar-img" class="user-avatar" src="" alt="Avatar">
+          <div class="user-text">
+            <span id="user-name-display" class="user-name">User</span>
+            <span id="user-role-display" class="user-role">Role</span>
+          </div>
+        </div>
+        <button id="btn-logout" class="btn-logout" title="Sign Out">⎋</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+      <header class="topbar">
+        <h1 id="page-title" class="page-heading">Executive Dashboard</h1>
+        <div class="topbar-actions">
+          <button class="btn btn-secondary" onclick="App.switchTab(App.currentTab)">🔄 Refresh</button>
+        </div>
+      </header>
+
+      <section class="content-container">
+        <div id="tab-content">
+          <!-- Dynamic Content Injected Here -->
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
