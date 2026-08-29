@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omniflow-crm-enterprise"
+version = "1.0.0"
+description = "OmniFlow Enterprise CRM Platform"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "OmniFlow Engineering Team", email = "engineering@omniflow.local" }
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Enterprise",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"
+]
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["config*", "core*", "modules*", "seeds*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]

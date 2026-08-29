@@ -1,0 +1,5 @@
+# OmniFlow Enterprise CRM - Python Dependencies
+# Pure standard library architecture for zero licensing vulnerability
+# Optional testing tools:
+pytest>=7.4.0
+coverage>=7.3.0

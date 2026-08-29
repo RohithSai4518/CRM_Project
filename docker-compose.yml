@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  crm-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omniflow-crm-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - CRM_ENV=production
+      - CRM_HOST=0.0.0.0
+      - CRM_PORT=8000
+    volumes:
+      - crm_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/').getcode()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  crm_storage:
+    driver: local
