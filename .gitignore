@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database temporary files
+*.db-wal
+*.db-shm
+
+# Environment & Secrets (Never commit .env files)
+*.env*
+.env*
+.env
+.env.example
+*.env.example
+
+# Distribution / packaging
+*.zip
+.venv/
+venv/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
