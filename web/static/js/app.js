@@ -27,12 +27,14 @@ const App = {
       this.switchTab("dashboard");
     } catch (err) {
       console.warn("Session check failed, prompting login:", err);
+      API.clearToken();
       this.showLoginView();
     }
   },
 
   toast(message, type = "success") {
     const container = document.getElementById("toast-container");
+    if (!container) return;
     const el = document.createElement("div");
     el.className = `toast toast-${type}`;
     el.innerText = message;
@@ -57,28 +59,38 @@ const App = {
         e.preventDefault();
         const email = document.getElementById("login-email").value;
         const password = document.getElementById("login-password").value;
-        try {
-          const res = await API.login(email, password);
-          API.setToken(res.data.token);
-          this.user = res.data.user;
-          this.toast(`Welcome back, ${this.user.full_name}!`);
-          this.renderUserProfile();
-          this.showMainApp();
-          this.switchTab("dashboard");
-        } catch (err) {
-          this.toast(err.message, "error");
-        }
+        await this.performLogin(email, password);
       });
     }
+  },
 
-    // Logout
-    const btnLogout = document.getElementById("btn-logout");
-    if (btnLogout) {
-      btnLogout.addEventListener("click", () => {
-        API.clearToken();
-        this.showLoginView();
-      });
+  async performLogin(email, password) {
+    try {
+      const res = await API.login(email, password);
+      API.setToken(res.data.token);
+      this.user = res.data.user;
+      this.toast(`Welcome back, ${this.user.full_name}!`);
+      this.renderUserProfile();
+      this.showMainApp();
+      this.switchTab("dashboard");
+    } catch (err) {
+      this.toast(err.message, "error");
     }
+  },
+
+  async quickLogin(email, password) {
+    await this.performLogin(email, password);
+  },
+
+  async handleRoleSwitch(email) {
+    await this.performLogin(email, "Password123!");
+  },
+
+  logout() {
+    API.clearToken();
+    this.user = null;
+    this.showLoginView();
+    this.toast("Logged out successfully");
   },
 
   showLoginView() {
@@ -93,19 +105,32 @@ const App = {
     // Toggle Admin navigation item visibility based on role
     const adminNav = document.getElementById("nav-admin-console");
     if (adminNav) {
-      if (this.user && (this.user.role === "Admin" || this.user.role === "Sales Manager")) {
+      if (this.user && (this.user.role === "Admin" || this.user.role === "SUPER_ADMIN" || this.user.role === "Sales Manager")) {
         adminNav.classList.remove("hidden");
       } else {
         adminNav.classList.add("hidden");
       }
     }
+
+    // Sync header dropdown
+    const roleSwitcher = document.getElementById("header-role-switcher");
+    if (roleSwitcher && this.user) {
+      roleSwitcher.value = this.user.email;
+    }
   },
 
   renderUserProfile() {
     if (!this.user) return;
-    document.getElementById("user-name-display").innerText = this.user.full_name;
-    document.getElementById("user-role-display").innerText = this.user.role;
-    document.getElementById("user-avatar-img").src = this.user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(this.user.full_name)}&background=0D8ABC&color=fff`;
+    const nameEl = document.getElementById("user-name-display");
+    const roleEl = document.getElementById("user-role-display");
+    const avatarEl = document.getElementById("user-avatar-img");
+
+    if (nameEl) nameEl.innerText = this.user.full_name || this.user.email || "User";
+    if (roleEl) roleEl.innerText = this.user.role || "Role";
+    if (avatarEl) {
+      const nameForAvatar = encodeURIComponent(this.user.full_name || this.user.email || "User");
+      avatarEl.src = this.user.avatar_url || `https://ui-avatars.com/api/?name=${nameForAvatar}&background=0D8ABC&color=fff`;
+    }
   },
 
   async switchTab(tab) {
@@ -115,7 +140,9 @@ const App = {
     if (activeLink) activeLink.classList.add("active");
 
     const pageTitle = document.getElementById("page-title");
-    pageTitle.innerText = tab.replace("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+    if (pageTitle) {
+      pageTitle.innerText = tab.replace(/_/g, " ").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    }
 
     const container = document.getElementById("tab-content");
     container.innerHTML = `<div style="padding: 40px; text-align: center; color: #94a3b8;">Loading ${tab}...</div>`;
@@ -146,13 +173,15 @@ const App = {
         await this.loadActivities(container);
         break;
       case "admin_console":
+      case "admin":
+      case "admin-console":
         await this.loadAdminConsole(container);
         break;
       case "audit":
         await this.loadAudit(container);
         break;
       default:
-        container.innerHTML = `<div>Tab not found</div>`;
+        container.innerHTML = `<div class="card" style="padding: 20px; text-align: center;">Tab "${tab}" not found. <button class="btn btn-primary" onclick="App.switchTab('dashboard')">Go to Dashboard</button></div>`;
     }
   },
 
@@ -250,7 +279,13 @@ const App = {
       document.getElementById("dashboard-sources-list").innerHTML = sourcesHtml;
 
     } catch (err) {
-      container.innerHTML = `<div class="card" style="color: #ef4444;">Failed to load dashboard metrics: ${err.message}</div>`;
+      container.innerHTML = `
+        <div class="card" style="color: #ef4444; padding: 20px;">
+          <h3>⚠️ Unable to load dashboard metrics</h3>
+          <p>${err.message}</p>
+          <button class="btn btn-primary" style="margin-top: 12px;" onclick="App.logout()">Switch / Re-authenticate Account</button>
+        </div>
+      `;
     }
   },
 
@@ -344,17 +379,17 @@ const App = {
 
         <!-- Tab Controls inside Profile -->
         <div style="display: flex; gap: 10px; border-bottom: 1px solid #334155; margin-bottom: 20px;">
-          <button class="btn btn-secondary" id="tab-btn-timeline" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;" onclick="App.switchProfileTab('timeline')">📅 Interaction Timeline (${acc.interaction_history.length})</button>
-          <button class="btn btn-secondary" id="tab-btn-contacts" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;" onclick="App.switchProfileTab('contacts')">👥 Contacts (${acc.contacts.length})</button>
-          <button class="btn btn-secondary" id="tab-btn-notes" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;" onclick="App.switchProfileTab('notes')">📝 Notes & Files (${acc.notes.length + acc.attachments.length})</button>
-          <button class="btn btn-secondary" id="tab-btn-deals" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;" onclick="App.switchProfileTab('deals')">🎯 Deals & Tickets (${acc.opportunities.length + acc.tickets.length})</button>
+          <button class="btn btn-secondary" id="tab-btn-timeline" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;" onclick="App.switchProfileTab('timeline')">📅 Interaction Timeline (${(acc.interaction_history || []).length})</button>
+          <button class="btn btn-secondary" id="tab-btn-contacts" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;" onclick="App.switchProfileTab('contacts')">👥 Contacts (${(acc.contacts || []).length})</button>
+          <button class="btn btn-secondary" id="tab-btn-notes" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;" onclick="App.switchProfileTab('notes')">📝 Notes & Files (${(acc.notes || []).length + (acc.attachments || []).length})</button>
+          <button class="btn btn-secondary" id="tab-btn-deals" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;" onclick="App.switchProfileTab('deals')">🎯 Deals & Tickets (${(acc.opportunities || []).length + (acc.tickets || []).length})</button>
         </div>
 
         <!-- Profile Tab: Interaction Timeline -->
         <div id="p-tab-timeline">
           <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: #94a3b8;">Chronological Customer Interaction History</h4>
           <div style="display: flex; flex-direction: column; gap: 14px; max-height: 400px; overflow-y: auto;">
-            ${acc.interaction_history.map(item => `
+            ${(acc.interaction_history || []).map(item => `
               <div style="display: flex; gap: 12px; background: #1e293b; padding: 12px; border-radius: 6px; border-left: 3px solid #3b82f6;">
                 <div style="font-size: 1.4rem;">${item.icon}</div>
                 <div style="flex: 1;">
@@ -366,7 +401,7 @@ const App = {
                 </div>
               </div>
             `).join('')}
-            ${acc.interaction_history.length === 0 ? '<div style="color: #94a3b8; text-align: center; padding: 20px;">No interaction logs recorded yet.</div>' : ''}
+            ${(!acc.interaction_history || acc.interaction_history.length === 0) ? '<div style="color: #94a3b8; text-align: center; padding: 20px;">No interaction logs recorded yet.</div>' : ''}
           </div>
         </div>
 
@@ -377,7 +412,7 @@ const App = {
             <table class="crm-table">
               <thead><tr><th>Name</th><th>Title</th><th>Email</th><th>Phone</th><th>Primary</th></tr></thead>
               <tbody>
-                ${acc.contacts.map(c => `
+                ${(acc.contacts || []).map(c => `
                   <tr>
                     <td><strong>${c.first_name} ${c.last_name}</strong></td>
                     <td>${c.job_title || '-'}</td>
@@ -395,33 +430,33 @@ const App = {
         <div id="p-tab-notes" class="hidden">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div>
-              <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: #94a3b8;">Internal Team Notes (${acc.notes.length})</h4>
+              <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: #94a3b8;">Internal Team Notes (${(acc.notes || []).length})</h4>
               <div style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
-                ${acc.notes.map(n => `
+                ${(acc.notes || []).map(n => `
                   <div style="background: #1e293b; padding: 10px; border-radius: 6px;">
                     <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: #94a3b8;">
-                      <span>👤 ${n.author_name}</span>
+                      <span>👤 ${n.author_name || 'Team Member'}</span>
                       <span>${n.created_at}</span>
                     </div>
                     <div style="font-size: 0.85rem; margin-top: 6px;">${n.note_text}</div>
                   </div>
                 `).join('')}
-                ${acc.notes.length === 0 ? '<div style="color: #64748b; font-size: 0.8rem;">No notes recorded.</div>' : ''}
+                ${(!acc.notes || acc.notes.length === 0) ? '<div style="color: #64748b; font-size: 0.8rem;">No notes recorded.</div>' : ''}
               </div>
             </div>
             <div>
-              <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: #94a3b8;">Attachments & Contracts (${acc.attachments.length})</h4>
+              <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: #94a3b8;">Attachments & Contracts (${(acc.attachments || []).length})</h4>
               <div style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
-                ${acc.attachments.map(att => `
+                ${(acc.attachments || []).map(att => `
                   <div style="background: #1e293b; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                       <div style="font-size: 0.88rem; font-weight: 600;">📎 ${att.filename}</div>
-                      <small style="color: #94a3b8;">${att.file_type} • ${round(att.file_size/1024, 1)} KB</small>
+                      <small style="color: #94a3b8;">${att.file_type} • ${Math.round(att.file_size/1024)} KB</small>
                     </div>
                     <span class="badge badge-neutral">Stored</span>
                   </div>
                 `).join('')}
-                ${acc.attachments.length === 0 ? '<div style="color: #64748b; font-size: 0.8rem;">No attachments uploaded.</div>' : ''}
+                ${(!acc.attachments || acc.attachments.length === 0) ? '<div style="color: #64748b; font-size: 0.8rem;">No attachments uploaded.</div>' : ''}
               </div>
             </div>
           </div>
@@ -434,7 +469,7 @@ const App = {
             <table class="crm-table">
               <thead><tr><th>Deal Name</th><th>Amount</th><th>Stage</th><th>Win Prob</th></tr></thead>
               <tbody>
-                ${acc.opportunities.map(o => `
+                ${(acc.opportunities || []).map(o => `
                   <tr>
                     <td><strong>${o.name}</strong></td>
                     <td style="color: #34d399; font-weight: 600;">$${Number(o.amount).toLocaleString()}</td>
@@ -450,7 +485,7 @@ const App = {
             <table class="crm-table">
               <thead><tr><th>Ticket Title</th><th>Priority</th><th>Status</th></tr></thead>
               <tbody>
-                ${acc.tickets.map(t => `
+                ${(acc.tickets || []).map(t => `
                   <tr>
                     <td><strong>${t.title}</strong></td>
                     <td><span class="badge ${t.priority === 'URGENT' || t.priority === 'HIGH' ? 'badge-danger' : 'badge-warning'}">${t.priority}</span></td>
@@ -485,7 +520,7 @@ const App = {
 
   quickAddNotePrompt(accountId) {
     const text = prompt("Enter internal customer note:");
-    if (!text || !text.strip()) return;
+    if (!text || !text.trim()) return;
     API.addCustomerNote(accountId, text).then(() => {
       this.toast("Customer note recorded!");
       this.openCustomer360Modal(accountId);
@@ -494,9 +529,9 @@ const App = {
 
   quickAddAttachmentPrompt(accountId) {
     const filename = prompt("Enter document attachment filename (e.g. Master_Services_Agreement_2026.pdf):");
-    if (!filename || !filename.strip()) return;
+    if (!filename || !filename.trim()) return;
     API.addCustomerAttachment(accountId, {
-      filename: filename.strip(),
+      filename: filename.trim(),
       file_size: 245000,
       file_type: "PDF Document",
       storage_path: `/storage/contracts/${filename}`
@@ -522,7 +557,36 @@ const App = {
       const res = await API.listUsers();
       const users = res.data;
 
+      // Compute quick user statistics
+      const adminCount = users.filter(u => u.role === 'Admin' || u.role === 'SUPER_ADMIN').length;
+      const salesCount = users.filter(u => u.role === 'Sales Manager' || u.role === 'Sales Representative').length;
+      const supportCount = users.filter(u => u.role === 'Support Agent').length;
+      const activeCount = users.filter(u => u.status === 'ACTIVE').length;
+
       container.innerHTML = `
+        <div class="kpi-grid" style="margin-bottom: 20px;">
+          <div class="kpi-card">
+            <span class="kpi-title">Total Staff</span>
+            <span class="kpi-value">${users.length} Users</span>
+            <span class="kpi-subtext">${activeCount} Active / ${users.length - activeCount} Inactive</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Administrators</span>
+            <span class="kpi-value">${adminCount}</span>
+            <span class="kpi-subtext">Full Root Permissions</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Sales Department</span>
+            <span class="kpi-value">${salesCount}</span>
+            <span class="kpi-subtext">Managers & Representatives</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Helpdesk Support</span>
+            <span class="kpi-value">${supportCount}</span>
+            <span class="kpi-subtext">Support & SLA Agents</span>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <div>
@@ -535,7 +599,7 @@ const App = {
             <table class="crm-table">
               <thead>
                 <tr>
-                  <th>User Full Name</th>
+                  <th>Team Member</th>
                   <th>Email</th>
                   <th>Assigned Role</th>
                   <th>Status</th>
@@ -550,7 +614,7 @@ const App = {
                     <td>${u.email}</td>
                     <td>
                       <select class="form-control" style="padding: 4px 8px; font-size: 0.82rem; width: auto;" onchange="App.changeUserRole('${u.id}', this.value)">
-                        <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>Admin</option>
+                        <option value="Admin" ${u.role === 'Admin' || u.role === 'SUPER_ADMIN' ? 'selected' : ''}>Admin</option>
                         <option value="Sales Manager" ${u.role === 'Sales Manager' ? 'selected' : ''}>Sales Manager</option>
                         <option value="Sales Representative" ${u.role === 'Sales Representative' ? 'selected' : ''}>Sales Representative</option>
                         <option value="Support Agent" ${u.role === 'Support Agent' ? 'selected' : ''}>Support Agent</option>
@@ -574,7 +638,7 @@ const App = {
         </div>
       `;
     } catch (err) {
-      container.innerHTML = `<div class="card" style="color: #ef4444;">Error loading admin console: ${err.message}</div>`;
+      container.innerHTML = `<div class="card" style="color: #ef4444; padding: 20px;">Error loading admin console: ${err.message}</div>`;
     }
   },
 

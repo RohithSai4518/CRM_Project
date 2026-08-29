@@ -56,9 +56,15 @@ const API = {
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 401 && !endpoint.includes("/login") && !endpoint.includes("/forgot-password") && !endpoint.includes("/reset-password")) {
+        // If stale token causes auth/permission failures, reset token and show login view
+        if ((response.status === 401 || (response.status === 403 && (data.message || '').includes('Unrecognized role'))) && 
+            !endpoint.includes("/login") && !endpoint.includes("/forgot-password") && !endpoint.includes("/reset-password")) {
           this.clearToken();
-          window.location.reload();
+          if (window.App && window.App.showLoginView) {
+            window.App.showLoginView();
+          } else {
+            window.location.reload();
+          }
         }
         throw new Error(data.message || `Request failed with status ${response.status}`);
       }

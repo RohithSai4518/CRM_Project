@@ -13,10 +13,10 @@
 
   <!-- Login Modal / Screen -->
   <div id="login-container" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 440px; text-align: center;">
-      <div style="font-size: 36px; margin-bottom: 8px;">⚡</div>
-      <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 6px;">OmniFlow CRM</h2>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px;">Sign in to access your enterprise workspace</p>
+    <div class="modal-content" style="max-width: 480px; text-align: center;">
+      <div style="font-size: 38px; margin-bottom: 6px;">⚡</div>
+      <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 4px;">OmniFlow CRM</h2>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px;">Enterprise Customer Relationship Management Platform</p>
       
       <form id="form-login" style="text-align: left;">
         <div class="form-group">
@@ -26,17 +26,35 @@
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label class="form-label" style="margin-bottom: 0;">Password</label>
-            <a href="#" style="font-size: 0.75rem; color: #60a5fa; text-decoration: none;" onclick="App.openForgotPasswordModal(); return false;">Forgot password?</a>
+            <a href="#" style="font-size: 0.76rem; color: #60a5fa; text-decoration: none;" onclick="App.openForgotPasswordModal(); return false;">Forgot password?</a>
           </div>
           <input type="password" id="login-password" class="form-control" value="Password123!" required>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 12px; padding: 10px;">
-          Authenticate Securely →
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px; padding: 10px; font-weight: 600;">
+          Sign In to Workspace →
         </button>
       </form>
-      
-      <div style="margin-top: 16px; font-size: 0.78rem; color: #94a3b8; border-top: 1px solid #334155; padding-top: 14px;">
-        Demo Logins: <code>admin@omnicrm.com</code>, <code>manager@omnicrm.com</code>, <code>rep@omnicrm.com</code>, <code>support@omnicrm.com</code>, <code>marketing@omnicrm.com</code> (PW: <code>Password123!</code>)
+
+      <!-- 1-Click Demo Quick Sign-in Section -->
+      <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 16px; text-align: left;">
+        <div style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1; margin-bottom: 10px;">⚡ Quick Demo 1-Click Sign-In:</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button class="btn btn-secondary" style="font-size: 0.76rem; justify-content: flex-start; padding: 6px 10px;" onclick="App.quickLogin('admin@omnicrm.com', 'Password123!')">
+            🛡️ Admin
+          </button>
+          <button class="btn btn-secondary" style="font-size: 0.76rem; justify-content: flex-start; padding: 6px 10px;" onclick="App.quickLogin('manager@omnicrm.com', 'Password123!')">
+            📈 Sales Manager
+          </button>
+          <button class="btn btn-secondary" style="font-size: 0.76rem; justify-content: flex-start; padding: 6px 10px;" onclick="App.quickLogin('rep@omnicrm.com', 'Password123!')">
+            💼 Sales Rep
+          </button>
+          <button class="btn btn-secondary" style="font-size: 0.76rem; justify-content: flex-start; padding: 6px 10px;" onclick="App.quickLogin('support@omnicrm.com', 'Password123!')">
+            🎧 Support Agent
+          </button>
+          <button class="btn btn-secondary" style="font-size: 0.76rem; justify-content: flex-start; padding: 6px 10px; grid-column: span 2;" onclick="App.quickLogin('marketing@omnicrm.com', 'Password123!')">
+            📢 Marketing Executive
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -115,7 +133,7 @@
             <span id="user-role-display" class="user-role">Role</span>
           </div>
         </div>
-        <button id="btn-logout" class="btn-logout" title="Sign Out">⎋</button>
+        <button id="btn-logout" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" title="Sign Out" onclick="App.logout()">⎋ Logout</button>
       </div>
     </aside>
 
@@ -123,8 +141,20 @@
     <main id="main-content">
       <header class="topbar">
         <h1 id="page-title" class="page-heading">Executive Dashboard</h1>
-        <div class="topbar-actions">
+        <div class="topbar-actions" style="display: flex; align-items: center; gap: 10px;">
+          <!-- Quick Switcher in Header -->
+          <div style="display: flex; align-items: center; gap: 6px; background: #1e293b; padding: 4px 10px; border-radius: 6px; border: 1px solid #334155;">
+            <span style="font-size: 0.76rem; color: #94a3b8;">Switch Role:</span>
+            <select id="header-role-switcher" class="form-control" style="padding: 2px 6px; font-size: 0.78rem; width: auto; height: 28px;" onchange="App.handleRoleSwitch(this.value)">
+              <option value="admin@omnicrm.com">Admin (Alex)</option>
+              <option value="manager@omnicrm.com">Sales Manager (Sarah)</option>
+              <option value="rep@omnicrm.com">Sales Rep (David)</option>
+              <option value="support@omnicrm.com">Support Agent (Elena)</option>
+              <option value="marketing@omnicrm.com">Marketing (Marcus)</option>
+            </select>
+          </div>
           <button class="btn btn-secondary" onclick="App.switchTab(App.currentTab)">🔄 Refresh</button>
+          <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem;" onclick="App.logout()">🚪 Sign Out</button>
         </div>
       </header>
 
@@ -137,7 +167,7 @@
 
   </div>
 
-  <script src="/static/js/api.js"></script>
-  <script src="/static/js/app.js"></script>
+  <script src="/static/js/api.js?v=2.5"></script>
+  <script src="/static/js/app.js?v=2.5"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@ from typing import Callable, Optional, List
 from core.http.request import Request
 from core.http.response import Response
 from core.security.tokens import verify_access_token, TokenError
-from config.permissions import UserRole, Permission, has_permission
+from config.permissions import UserRole, Permission, has_permission, normalize_role
 
 
 def require_auth(handler: Callable[[Request], Response]) -> Callable[[Request], Response]:
@@ -40,14 +40,11 @@ def require_permission(permission: Permission):
             except TokenError as te:
                 return Response.unauthorized(f"Invalid authentication token: {str(te)}")
 
-            user_role_str = payload.get("role")
-            try:
-                role_enum = UserRole(user_role_str)
-            except Exception:
-                return Response.forbidden(f"Unrecognized role '{user_role_str}'")
+            user_role_str = payload.get("role", "")
+            role_enum = normalize_role(user_role_str)
 
             if not has_permission(role_enum, permission):
-                return Response.forbidden(f"Action requires permission '{permission.value}'")
+                return Response.forbidden(f"Action requires permission '{permission.value}' for role '{role_enum.value}'")
 
             return handler(request)
         return wrapper
